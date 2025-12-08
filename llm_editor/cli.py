@@ -3,17 +3,62 @@ import os
 import shutil
 import argparse
 import datetime
+import tempfile
+import subprocess
 from .agent import Agent
 from .config import Config
 from .utils import parse_input_file
 
+def get_log_dir():
+    """Returns the directory for log files."""
+    log_dir = os.path.expanduser("~/.llm-editor/logs")
+    os.makedirs(log_dir, exist_ok=True)
+    return log_dir
+
 def log_error(message):
     timestamp = datetime.datetime.now().isoformat()
+    log_file = os.path.join(get_log_dir(), "error.log")
     try:
-        with open("error.log", "a", encoding="utf-8") as f:
+        with open(log_file, "a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] {message}\n")
     except Exception:
         pass # Fallback if logging fails
+
+def get_prompt_from_editor():
+    """
+    Opens the user's preferred editor to capture the prompt.
+    """
+    editor = os.environ.get('EDITOR')
+    if not editor:
+        if shutil.which('vim'):
+            editor = 'vim'
+        elif shutil.which('nano'):
+            editor = 'nano'
+        elif shutil.which('vi'):
+            editor = 'vi'
+        else:
+            # Last resort
+            print("Error: No text editor found. Please set the EDITOR environment variable.")
+            return None
+
+    with tempfile.NamedTemporaryFile(suffix=".txt", mode='w+', delete=False) as tf:
+        tf.write("\n# Please enter your instructions here.\n# Lines starting with '#' will be ignored.\n")
+        tf_path = tf.name
+    
+    try:
+        subprocess.call([editor, tf_path])
+        
+        with open(tf_path, 'r') as f:
+            lines = f.readlines()
+            
+        prompt_lines = [line for line in lines if not line.strip().startswith('#')]
+        return "".join(prompt_lines).strip()
+    except Exception as e:
+        log_error(f"Error opening editor: {e}")
+        return None
+    finally:
+        if os.path.exists(tf_path):
+            os.remove(tf_path)
 
 def main():
     # 1. Parse Arguments
@@ -63,7 +108,7 @@ app:
     except ValueError as e:
         log_error(f"Configuration Error: {e}")
         print(f"Configuration Error: {e}")
-        print("Failure. Check error.log for details.")
+        print(f"Failure. Check {os.path.join(get_log_dir(), 'error.log')} for details.")
         return
 
     input_filepath = args.input_file
@@ -73,12 +118,16 @@ app:
         user_prompt, content = parse_input_file(input_filepath)
         
         if not user_prompt:
-            log_error("Warning: No prompt found between <tag> start_prompt and <tag> end_prompt.")
-            # Continuing despite warning, but logging it.
+            print("No prompt tags found in file. Opening editor for instructions...")
+            user_prompt = get_prompt_from_editor()
+            
+            if not user_prompt:
+                print("Operation cancelled: No instructions provided.")
+                return
         
     except Exception as e:
         log_error(f"Error parsing file: {e}")
-        print("Failure. Check error.log for details.")
+        print(f"Failure. Check {os.path.join(get_log_dir(), 'error.log')} for details.")
         return
 
     # 4. Initialize Agent
@@ -86,7 +135,8 @@ app:
     system_prompt = (
         "You are an expert text editor. Your task is to rewrite the provided content based on the user's instructions. "
         "You must output ONLY the rewritten content. Do not add any introductory or concluding remarks. "
-        "Do not wrap the output in markdown code blocks (```) unless the user asks for it or the file format requires it."
+        "Do not wrap the output in markdown code blocks (```) unless the user asks for it or the file format requires it. "
+        "If the user asks to convert code to another language, output ONLY the code in the new language, without markdown formatting."
     )
     agent = Agent(system_prompt=system_prompt)
 
@@ -95,7 +145,7 @@ app:
         result = agent.process(user_prompt, content)
     except Exception as e:
         log_error(f"Error during LLM processing: {e}")
-        print("Failure. Check error.log for details.")
+        print(f"Failure. Check {os.path.join(get_log_dir(), 'error.log')} for details.")
         return
 
     # 6. Output Result and Backup
@@ -142,7 +192,7 @@ app:
             except Exception as restore_error:
                 log_error(f"CRITICAL: Failed to restore from backup: {restore_error}")
         
-        print("Failure. Check error.log for details.")
+        print(f"Failure. Check {os.path.join(get_log_dir(), 'error.log')} for details.")
 
 if __name__ == "__main__":
     main()

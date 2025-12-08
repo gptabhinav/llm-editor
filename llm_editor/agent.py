@@ -1,4 +1,5 @@
 import openai
+import os
 from .config import Config
 from .pricing import PRICING_RATES
 
@@ -79,8 +80,14 @@ Content to Process:
         log_entry.append("-" * 30 + "\n")
 
         try:
-            with open("usage.log", "a", encoding="utf-8") as f:
+            log_dir = os.path.expanduser("~/.llm-editor/logs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, "usage.log")
+            with open(log_file, "a", encoding="utf-8") as f:
                 f.write("\n".join(log_entry))
+        except Exception as e:
+            print(f"DEBUG: Logging failed: {e}")
+            # Fail silently on logging errors to avoid disrupting the main flow
         except Exception as e:
             # Fail silently on logging errors to avoid disrupting the main flow
             pass

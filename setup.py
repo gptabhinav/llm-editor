@@ -9,6 +9,7 @@ setup(
     install_requires=[
         "openai",
         "PyYAML",
+        "python-dotenv",
     ],
     entry_points={
         "console_scripts": [

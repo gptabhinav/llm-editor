@@ -24,10 +24,7 @@ def log_error(message):
     except Exception:
         pass # Fallback if logging fails
 
-def get_prompt_from_editor():
-    """
-    Opens the user's preferred editor to capture the prompt.
-    """
+def get_default_editor():
     editor = os.environ.get('EDITOR')
     if not editor:
         if shutil.which('vim'):
@@ -36,10 +33,17 @@ def get_prompt_from_editor():
             editor = 'nano'
         elif shutil.which('vi'):
             editor = 'vi'
-        else:
-            # Last resort
-            print("Error: No text editor found. Please set the EDITOR environment variable.")
-            return None
+    return editor
+
+def get_prompt_from_editor():
+    """
+    Opens the user's preferred editor to capture the prompt.
+    """
+    editor = get_default_editor()
+    if not editor:
+        # Last resort
+        print("Error: No text editor found. Please set the EDITOR environment variable.")
+        return None
 
     with tempfile.NamedTemporaryFile(suffix=".txt", mode='w+', delete=False) as tf:
         tf.write("\n# Please enter your instructions here.\n# Lines starting with '#' will be ignored.\n")
@@ -74,11 +78,8 @@ def main():
         os.makedirs(config_dir, exist_ok=True)
         config_path = os.path.join(config_dir, "config.yaml")
         
-        if os.path.exists(config_path):
-            print(f"Config file already exists at {config_path}")
-            return
-
-        default_config = """llm:
+        if not os.path.exists(config_path):
+            default_config = """llm:
   provider: openai
   api_key: "your_api_key_here"
   model: "gpt-4o"
@@ -87,10 +88,18 @@ app:
   backup_enabled: true
   backup_suffix: ".backup"
 """
-        with open(config_path, 'w') as f:
-            f.write(default_config)
-        print(f"Created default config at {config_path}")
-        print("Please edit it to add your API key.")
+            with open(config_path, 'w') as f:
+                f.write(default_config)
+            print(f"Created default config at {config_path}")
+        else:
+            print(f"Config file already exists at {config_path}")
+
+        editor = get_default_editor()
+        if editor:
+            print(f"Opening config file in {editor}...")
+            subprocess.call([editor, config_path])
+        else:
+            print("Please edit it to add your API key.")
         return
 
     if not args.input_file:

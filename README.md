@@ -10,9 +10,9 @@ pip install .
 
 ## Configuration
 
-You can configure the tool using a YAML file, environment variables, or a `.env` file.
+You can configure the tool using a YAML file.
 
-### 1. YAML Configuration (Recommended)
+### YAML Configuration
 
 Run the following command to generate a default configuration file at `~/.llm-editor/config.yaml`:
 
@@ -32,14 +32,6 @@ app:
   backup_enabled: true
   backup_suffix: ".backup"
 ```
-
-### 2. Environment Variables
-
-You can also set configuration via environment variables or a `.env` file in your working directory:
-
-- `OPENAI_API_KEY` or `LLM_API_KEY`
-- `LLM_MODEL` (default: `gpt-3.5-turbo`)
-- `LLM_PROVIDER` (default: `openai`)
 
 ## Usage
 

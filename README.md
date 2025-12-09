@@ -74,3 +74,24 @@ If the input file does not contain prompt tags, the tool will open your default 
 - `--outfile <path>`: Write output to a specific file (input file is preserved).
 - `--inplace`: Overwrite the input file directly (skips backup).
 - `--init-config`: Initialize the configuration file.
+
+## Usage Tracking & Costs
+
+The tool automatically tracks token usage and estimates costs for each operation.
+
+Logs are stored in `~/.llm-editor/logs/usage.log` and contain:
+- Timestamp
+- Model used
+- Token counts (Input/Output/Total)
+- Estimated cost (USD)
+
+Example log entry:
+```text
+--- Usage Report (2023-10-27T10:00:00.123456) ---
+Model: gpt-4o
+Input Tokens:  150
+Output Tokens: 50
+Total Tokens:  200
+Estimated Cost: $0.001250
+------------------------------
+```

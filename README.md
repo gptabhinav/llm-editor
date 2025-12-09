@@ -62,6 +62,8 @@ edit input.txt
 
 If the input file does not contain prompt tags, the tool will open your default text editor (configured via `$EDITOR`). You can type your instructions there, save, and close the editor to proceed.
 
+![Interactive Mode Workflow](assets/sample_worflow1.gif)
+
 ### Options
 
 - `--outfile <path>`: Write output to a specific file (input file is preserved).

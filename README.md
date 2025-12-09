@@ -5,6 +5,11 @@ A CLI tool to edit files using LLMs.
 ## Installation
 
 ```bash
+pip install llm-editor
+```
+or, if you are installing from git directly
+```bash
+git@github.com:gptabhinav/llm-editor.git
 pip install .
 ```
 
